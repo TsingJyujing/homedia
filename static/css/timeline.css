@@ -1,0 +1,204 @@
+.timeline-container {
+    width: 100%;
+    /*height:auto;*/
+}
+
+.timeline {
+    width: 100%;
+    margin: auto;
+    position: relative;
+    height: auto;
+    padding: 30px 0px 0px 0px;
+}
+
+.timeline > .timeline-block {
+    width: 50%;
+}
+
+.timeline-block > .popover {
+    max-width: 70%;
+}
+
+.timeline > .timeline-block-odd {
+    float: left;
+}
+
+.timeline > .timeline-block-even {
+    float: right;
+}
+
+.timeline-block-odd > .timeline-content {
+    display: block;
+    position: relative;
+    float: right;
+    margin-right: 50px;
+}
+
+.timeline-block-even > .timeline-content {
+    display: block;
+    float: left;
+    position: relative;
+    margin-left: 50px;
+}
+
+.timeline-content > .arrow {
+    top: 20px !important;
+    background: #f7f7f7;
+}
+
+.timeline-content > .popover-content {
+    max-height: 240px;
+    overflow-y: auto;
+    color: #696969;
+    font-size: 11px;
+}
+
+.timeline-content > .popover-footer {
+    padding: 8px 14px;
+    margin: 0px;
+    font-size: 11px;
+    border-top: 1px dotted #b9b9b9;
+    color: #4b4b4b;
+    background: #F2F2F2;
+}
+
+.timeline img {
+    border: 1px solid #dddddd;
+    padding: 2px;
+}
+
+.timeline-img {
+    width: 50px;
+    height: 50px;
+    -webkit-border-radius: 25px;
+    -moz-border-radius: 25px;
+    -o-border-radius: 25px;
+    border-radius: 25px;
+    border: 3px solid #A3E3E8;
+    margin: auto;
+    background: #ffffff;
+    position: absolute;
+    z-index: 9;
+    left: 50%;
+    margin-left: -25px;
+    background: url(../../indexImg/greeneye.jpg);
+    background-size: cover;
+}
+
+.timeline-line {
+    width: 4px;
+    height: 100%;
+    background: #aef0f5;
+    position: absolute;
+    z-index: 8;
+    left: 50%;
+    border-left: 1px solid #aef0f5;
+    border-right: 1px solid #ffffff;
+    margin-left: -2px;
+    margin-top: -30px;
+}
+
+.timeline-block-odd > .popover.left > .arrow:after {
+    right: 2px;
+    border-left-color: #F7F7F7;
+}
+
+.timeline-block-even > .popover.right > .arrow:after {
+    left: 2px;
+    border-right-color: #F7F7F7;
+}
+
+/** mediaquery查询样式 **/
+@media screen and (max-width: 560px) {
+
+    .timeline {
+        width: 100%;
+        position: relative;
+        height: auto;
+        padding: 30px 0px 0px 0px;
+    }
+
+    .timeline > .timeline-block {
+        width: 100%;
+    }
+
+    .timeline > .timeline-block-odd {
+        float: right;
+    }
+
+    .timeline-block-odd > .timeline-content {
+        display: block;
+        position: relative;
+        float: left;
+        margin-left: 75px;
+    }
+
+    .timeline-block-even > .timeline-content {
+        display: block;
+        position: relative;
+        float: left;
+        margin-left: 75px;
+    }
+
+    .timeline-block-odd > .popover > .arrow, .timeline-block-odd > .popover > .arrow:after {
+        position: absolute;
+        display: block;
+        width: 0;
+        height: 0;
+        border-color: transparent;
+        border-style: solid;
+    }
+
+    .timeline-block-odd > .popover.left > .arrow {
+        left: -21px;
+        bottom: -10px;
+        content: " ";
+        border-left-width: 0;
+        border-right-color: #999;
+        border-width: 10px;
+    }
+
+    .timeline-block-odd > .popover.left > .arrow:after {
+        left: 1px;
+        right: 1px;
+        bottom: -10px;
+        content: " ";
+        border-left-width: 0;
+        border-right-color: #fff;
+    }
+
+    .timeline-block-odd > .popover > .arrow:after {
+        content: "";
+        border-width: 10px;
+    }
+
+    .timeline-img {
+        width: 50px;
+        height: 50px;
+        margin: auto;
+        background: #ffffff;
+        -webkit-border-radius: 25px;
+        -moz-border-radius: 25px;
+        -o-border-radius: 25px;
+        border-radius: 25px;
+        border: 3px solid #8e8e8e;
+        position: absolute;
+        z-index: 9;
+        left: 0;
+        margin-left: 0px;
+    }
+
+    .timeline-line {
+        width: 4px;
+        height: 100%;
+        background: #d0d0d0;
+        border-left: 1px solid #ececec;
+        border-right: 1px solid #ececec;
+        position: absolute;
+        z-index: 8;
+        left: 0;
+        margin-left: 24px;
+        margin-top: -30px;
+    }
+
+}

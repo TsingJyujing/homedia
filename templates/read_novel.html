@@ -1,0 +1,147 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        文献阅读器
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <script src="/homedia/static/js/common_api.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        let novel_id = {{ novel_id }};
+        let like_mode = false;
+
+        function remove_novel() {
+            if (confirm("确认真的删除本文?")) {
+                $.post(
+                    "/homedia/remove/novel", {
+                        "id": novel_id
+                    }, function (data) {
+                        let jsObj = JSON.parse(data);
+                        if (jsObj["status"] === "success") {
+                            close_window();
+                        } else {
+                            alert("删除本文的时候发生了错误");
+                            console.error(jsObj);
+                        }
+                    }
+                );
+            }
+        }
+
+        function set_like_mode() {
+            $.post(
+                "/homedia/set/novel/like",
+                {
+                    "id": novel_id,
+                    "like": !like_mode
+                }, function (data) {
+                    let result = JSON.parse(data);
+                    if (result["status"] === "success") {
+                        like_mode = !like_mode;
+                    }
+                    update_like_mode();
+                }
+            );
+        }
+
+        function process_like(like_info) {
+            if (like_info === undefined) {
+                return false;
+            } else {
+                return like_info;
+            }
+        }
+
+        function update_like_mode() {
+            $("#set_like_btn").text(
+                like_mode ? "取消设置为喜欢" : "设置为喜欢"
+            );
+        }
+
+        //Document loaded
+        $(() => {
+            $.get(
+                "/homedia/get/novel",
+                {
+                    "id": novel_id
+                },
+                (data) => {
+                    let jsObj = JSON.parse(data);
+                    let novel_text = jsObj["novel_text"];
+                    let text_length = novel_text.length;
+                    //novel_text = toSBC(novel_text);
+                    while (true) {
+                        novel_text = novel_text.replace("\s\s\s", "  ");
+                        if (novel_text.length === text_length) {
+                            break;
+                        }
+                    }
+                    novel_text = novel_text.replace("\s\s", "<br>");
+
+                    $("#title_text").text(jsObj["title"]);
+                    $("#main_text").text(
+                        novel_text
+                    );
+                    like_mode = process_like(jsObj["like"]);
+                    update_like_mode();
+                }
+            );
+        })
+    </script>
+</head>
+
+<body>
+<div class="container">
+    <div class="col-md-12 column">
+        <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse"
+                        data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="#">文献阅读器</a>
+            </div>
+
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="#" onclick="set_like_mode()" id="set_like_btn">读取状态失败</a>
+                    </li>
+                </ul>
+
+                <ul class="nav navbar-nav">
+                    <li>
+                        <a href="#" onclick="remove_novel()">删除本文</a>
+                    </li>
+                </ul>
+
+
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="javascript:alert('Copyright TsingJyujing');">Copyright-_-</a>
+                    </li>
+
+                </ul>
+
+
+            </div>
+
+        </nav>
+    </div>
+
+    <br><br><br><br>
+    <h2 id="title_text"></h2>
+    <p id="main_text"></p>
+</div>
+
+</body>
+</html>

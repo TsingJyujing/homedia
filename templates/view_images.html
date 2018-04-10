@@ -1,0 +1,268 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        图片查看工具
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <script src="/homedia/static/js/jquery.lazyload.min.js"></script>
+    <script src="/homedia/static/js/common_api.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        let images_pre_row = 2;
+        let image_id = {{ images_id }};
+        let query_keywords = "{{ query_key_words }}";
+        let current_index_like = false;
+        let next_index = undefined;
+        let last_index = undefined;
+
+
+        function remove_images() {
+            if (confirm("确认真的删除本帖?")) {
+                $.post(
+                    "/homedia/remove/images", {
+                        "id": image_id
+                    }, function (data) {
+                        let jsObj = JSON.parse(data);
+                        if (jsObj["status"] === "success") {
+                            if (last_index !== undefined) {
+                                last_page();
+                            } else if (next_index !== undefined) {
+                                next_page();
+                            } else {
+                                close_window();
+                            }
+                        } else {
+                            alert("删除本文的时候发生了错误");
+                            console.error(jsObj);
+                        }
+                    }
+                );
+            }
+        }
+
+        function refresh_nearby() {
+
+            $.get("/homedia/query/images/nearby", {
+                "id": image_id,
+                "key_words": query_keywords,
+                "dir": "last"
+            }, (data) => {
+                let jsObj = JSON.parse(data);
+                last_index = jsObj._id;
+                if (last_index == undefined) {
+                    $("#last_href").text(
+                        "上一篇: 无法找到"
+                    )
+                } else {
+                    $("#last_href").text(
+                        "上一篇: " + jsObj.title
+                    )
+                }
+
+            });
+
+            $.get("/homedia/query/images/nearby", {
+                "id": image_id,
+                "key_words": query_keywords,
+                "dir": "next"
+            }, (data) => {
+                let jsObj = JSON.parse(data);
+                next_index = jsObj._id;
+                if (next_index == undefined) {
+                    $("#next_href").text(
+                        "下一篇: 无法找到"
+                    )
+                } else {
+                    $("#next_href").text(
+                        "下一篇: " + jsObj.title
+                    )
+                }
+            });
+        }
+
+        function last_page() {
+            if (last_index !== undefined) {
+                image_id = last_index;
+                refresh_images();
+                refresh_nearby();
+            }
+
+        }
+
+        function next_page() {
+            if (next_index !== undefined) {
+                image_id = next_index;
+                refresh_images();
+                refresh_nearby();
+            }
+        }
+
+        function set_like_mode() {
+            $.post("/homedia/set/images/like", {
+                "id": image_id,
+                "like": !current_index_like
+            }, function (data) {
+                let jsObj = JSON.parse(data);
+                if (jsObj["status"] === "success") {
+                    current_index_like = !current_index_like;
+                    $("#set_like_btn").text(current_index_like ? "撤销标记喜欢" : "标记为喜欢");
+                }
+            })
+        }
+
+        function refresh_images() {
+            let mainBox = $("#main_box");
+            mainBox.empty();
+            for (let i = 0; i < 2; ++i) {
+                mainBox.append($("<br>"))
+            }
+
+            let box_width = 12 / images_pre_row;
+            $.get(
+                "/homedia/get/images",
+                {
+                    "id": image_id
+                }, function (data) {
+                    let jsObj;
+                    try {
+                        jsObj = JSON.parse(data);
+                    } catch (err) {
+                        console.error("Error while querying image info where id=" + image_id);
+                        console.error(err);
+                        console.error(data);
+                    }
+
+                    let image_count = jsObj["image_list"].length;
+                    let row_count = Math.ceil(image_count * 1.0 / images_pre_row);
+                    mainBox.append($("<h3></h3>").text(jsObj["title"]));
+                    mainBox.append($("<p></p>").text(jsObj["comment"]));
+                    mainBox.append($("<br>"));
+                    current_index_like = jsObj["like"];
+                    $("#set_like_btn").text(current_index_like ? "撤销标记喜欢" : "标记为喜欢");
+                    for (let row = 0; row < row_count; row++) {
+                        let current_row = $("<div></div>").attr({
+                            "class": "row"
+                        });
+                        for (let col = 0; col < images_pre_row; col++) {
+                            let current_index = row * images_pre_row + col;
+                            if (current_index < image_count) {
+                                let current_image_box = $("<div></div>").attr({
+                                    "class": "col-md-" + box_width
+                                }).html(
+                                    $("<img></img>").attr({
+                                        "class": "lazy",
+                                        "data-original": "/image_pool/" + jsObj["image_list"][current_index],
+                                        "width": "100%",
+                                        "alt": "加载失败"
+                                    })
+                                );
+                                current_row.append(current_image_box);
+                                current_row.append("&nbsp;");
+                            }
+                        }
+                        mainBox.append(current_row);
+                        mainBox.append("<br>");
+                    }
+
+                    set_lazy_images();
+
+                    for (let i = 0; i < 1; ++i) {
+                        mainBox.append($("<br>"))
+                    }
+                }
+            );
+        }
+
+        function set_lazy_images() {
+            $("img.lazy").lazyload({
+                effect: "fadeIn",
+                threshold: 180
+            });
+        }
+
+        $(() => {//On document ready
+            refresh_images();
+            refresh_nearby();
+        });
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/homedia/view/query/images">图片浏览器</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="#" onclick="set_like_mode()" id="set_like_btn">读取状态失败</a>
+                        </li>
+                    </ul>
+
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="#" onclick="remove_images()">删除图片集</a>
+                        </li>
+                    </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="javascript:alert('Copyright TsingJyujing');">Copyright-_-</a>
+                        </li>
+
+                    </ul>
+
+                </div>
+
+            </nav>
+        </div>
+        <div class="col-md-12 column" id="main_box">
+
+        </div>
+
+        <div class="col-md-12 column">
+
+            <nav class="navbar navbar-inverse navbar-fixed-bottom" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-2">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">切换</a>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+                    <ul class="nav navbar-nav" id="navi_bar_down">
+                        <li>
+                            <a id="last_href" href="#" onclick="last_page()"></a>
+                        </li>
+                        <li>
+                            <a id="next_href" href="#" onclick="next_page()"></a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+</body>
+</html>

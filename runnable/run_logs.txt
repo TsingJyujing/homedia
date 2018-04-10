@@ -1,0 +1,1 @@
+Running script in parameters: /opt/tushare_data/data_appender.py stock_daily_tick D 14 at 2018-02-23 23:15:41

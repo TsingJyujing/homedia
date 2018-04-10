@@ -1,0 +1,349 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        简单视频检索系统
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <script src="/homedia/static/js/common_api.js"></script>
+    <script src="/homedia/static/js/jquery.lazyload.min.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        let page_count = 10;
+        let like_only = false;
+
+        let setLikeOnly = () => {
+            const last_like_value = like_only;
+            let confirm_value = false;
+
+            if(like_only){
+                confirm_value = !confirm("是否退出只看喜欢模式?");
+            }else{
+                confirm_value = confirm("是否进入只看喜欢模式?");
+            }
+
+            like_only = confirm_value
+
+            if (like_only!=last_like_value){
+                page_id = 1;
+                if (like_only){
+                    $("#set_like_only").text("全部都看")
+                }else{
+                    $("#set_like_only").text("只看喜欢")
+                }
+                refresh_video_list();
+            }
+        }
+
+        let setPageSize = () => {
+            const jump_to = parseInt(prompt("输入页面条数", page_count));
+            if (jump_to>=1){
+                page_count = jump_to;
+                refresh_video_list();
+            }
+        };
+
+        let page_id = 1;
+
+        function click_first_page() {
+            page_id = 1;
+            refresh_video_list();
+        }
+
+        function delete_video(video_id) {
+            $.get(
+                "/homedia/query/video/byid",
+                {
+                    "id": video_id
+                },
+                function (video_info) {
+                    video_info = JSON.parse(video_info);
+                    if (video_info["status"] !== undefined) {
+                        console.error("查询失败");
+                        console.error(video_info);
+                    } else {
+                        if (confirm("是否删除视频" + video_info.name + "?")) {
+                            $.post("/homedia/remove/video", {
+                                "id": video_id,
+                            }, (data) => {
+                                data = JSON.parse(data);
+                                if (data["status"] === "success") {
+                                    refresh_video_list();
+                                    alert("成功删除视频!");
+                                } else {
+                                    alert("删除视频失败！");
+                                    console.error("删除视频失败！");
+                                    console.error(data);
+                                }
+                            });
+                        }
+                    }
+                }
+            );
+
+        }
+
+        function set_video_like(video_id, is_like) {
+            $.post("/homedia/set/video/like", {
+                "id": video_id,
+                "like": is_like
+            }, (data) => {
+                let like_text = "";
+                if (is_like) {
+                    like_text = "喜欢"
+                } else {
+                    like_text = "不喜欢"
+                }
+                refresh_video_list();
+                // TODO pop a modal to alert
+                // alert(sprintf("成功的将视频%d标记为%s", video_id, like_text));
+
+            })
+        }
+
+        function click_last_page() {
+            if (page_id == 1) {
+                alert("已经是第一页了！")
+            } else {
+                page_id--;
+                refresh_video_list();
+            }
+        }
+
+        function click_next_page() {
+            page_id++;
+            refresh_video_list();
+        }
+
+        function click_jump_page() {
+            page_id = parseInt(prompt("输入需要跳转的页面数", page_id));
+            refresh_video_list();
+        }
+
+        function get_like_button_icon(is_like) {
+            return "glyphicon glyphicon-thumbs-" + (is_like ? "up" : "down");
+        }
+
+        const column_division = 4;
+
+        function refresh_video_list() {
+            const keyword = $("#query_keyword").val();
+            $.get(
+                "/homedia/query/video/bytitle",
+                {
+                    "name": keyword,
+                    "p": page_id,
+                    "n": page_count,
+                    "like": like_only?"yes":"no"
+                },
+                function (data) {
+                    data = JSON.parse(data);
+                    const mainBlock = $("#main_box");
+                    mainBlock.empty();
+                    //Clear block first
+                    let current_index = 0;
+                    const column_size = 12 / column_division;
+
+
+                    data.forEach(function (video_info) {
+                        console.log("Appending:");
+                        console.log(video_info);
+
+                        const vid = video_info._id;
+                        const video_url = "/file/video/file/porv_" + vid + ".mp4";
+                        const preview_url = "/file/video/preview/prev_" + vid + ".gif";
+                        let label_block = $("<p></p>");
+                        video_info.tags.forEach(
+                            (tag_text) => {
+                                label_block.append(
+                                    $("<span></span>").attr(
+                                        {
+                                            "class": "label label-warning",
+                                            "href": "#",
+                                        }
+                                    ).text(
+                                        tag_text
+                                    )
+                                ).append("&nbsp;").append("<br>")
+                            }
+                        );
+                        mainBlock.append(
+                            $("<div></div>").attr({
+                                "class": "col-md-" + column_size,
+                            }).html(
+                                $("<div></div>").attr("class", "thumbnail").append(
+                                    /*
+                                    $("<video></video>").attr({
+                                        "controls": "true",
+                                        "width": "100%",
+                                        "poster": preview_url,
+                                        "postpone": "true"
+                                    }).append(
+                                        $("<source></source>").attr({
+                                            //"src": video_url,
+                                            "type": "video/mp4"
+                                        })
+                                    )
+                                    */
+                                    $("<a></a>").attr({
+                                        "href": video_url,
+                                        "target": "_blank"
+                                    }).append(
+                                        $("<img>").attr({
+                                            "style": "height:200px",
+                                            "class": "lazy",
+                                            "data-original": preview_url,
+                                            "alt": "加载失败"
+                                        })
+                                    )
+                                ).append(
+                                    $("<div></div>").attr("class", "caption").append(
+                                        $("<h4></h4>").text(video_info.name)
+                                        //).append(label_block
+                                    ).append(
+                                        $("<p></p>").html(
+                                            "视频时间：" + format_video_time(video_info.time) + "<br>"
+                                            + "尺寸:" + sprintf("%dx%d", video_info.size.width, video_info.size.height)
+                                        )
+                                    ).append("&nbsp;").append(
+                                        $("<p></p>").append(
+                                            $("<button></button>").attr({
+                                                "type": "button",
+                                                "class": "btn btn-default",
+                                                "aria-label": "Left Align",
+                                                "href": video_url
+                                            }).append(
+                                                $("<span></span>").attr({
+                                                    "class": "glyphicon glyphicon-play",
+                                                    "aria-hidden": "true"
+                                                })
+                                            ).append(
+                                                $("<a></a>").attr({
+                                                    "href": video_url,
+                                                    "target": "_blank"
+                                                }).html(
+                                                    "播放"
+                                                )
+                                            )
+                                        ).append("&nbsp;").append(
+                                            $("<button></button>").attr({
+                                                "type": "button",
+                                                "class": "btn btn-default",
+                                                "aria-label": "Left Align",
+                                                "onclick": sprintf("set_video_like(%d,%s)", vid, !video_info.like)
+                                            }).html(
+                                                $("<span></span>").attr({
+                                                    "class": get_like_button_icon(!video_info.like),
+                                                    "aria-hidden": "true"
+                                                })
+                                            )
+                                        ).append("&nbsp;").append(
+                                                $("<button></button>").attr({
+                                                    "type": "button",
+                                                    "class": "btn btn-default",
+                                                    "aria-label": "Left Align",
+                                                    "onclick": sprintf("delete_video(%d)", vid)
+                                                }).text("删除")
+                                            )
+                                    )
+                                )
+                            )
+                        );
+                        current_index++;
+                        //mainBlock.append($("<br>"))
+                    });
+                    set_lazy_images();
+                }
+            )
+        }
+
+        function set_lazy_images() {
+            $("img.lazy").lazyload({
+                effect: "fadeIn",
+                threshold: 180
+            });
+        }
+
+
+        $(function () {
+            refresh_video_list();
+        })
+    </script>
+</head>
+<body>
+<a name="page_head"></a>
+
+<div class="container-fluid">
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/homedia/view/query/video">简单视频检索系统</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <form class="navbar-form navbar-left" onkeypress="click_first_page()" onsubmit="return false">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="query_keyword" onkeypress="click_first_page()" title=""/>
+                        </div>
+                        <button type="button" class="btn btn-default" onclick="click_first_page()">搜索</button>
+                    </form>
+
+                    <ul class="nav navbar-nav navbar-left">
+                        <li class="dropdown open">
+                            <a class="dropdown-toggle" href="#" data-toggle="dropdown">设置<strong
+                                    class="caret"></strong></a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="#" onclick="setPageSize()">单页条数</a>
+                                </li>
+                                <li>
+                                    <a href="#" onclick="setLikeOnly()" id="set_like_only">只看喜欢</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="javascript:alert('Copyright TsingJyujing');">Copyright-_-</a>
+                        </li>
+
+                    </ul>
+
+
+                </div>
+
+            </nav>
+        </div>
+        <br><br><br>
+        <!--这里输出主要内容-->
+        <div class="row" id="main_box">
+
+        </div>
+
+        <div class="btn-group" role="group" aria-label="...">
+          <button type="button"class="btn btn-default" onclick="click_first_page()"><a href="#page_head">第一页</a></button>
+          <button type="button" class="btn btn-default" onclick="click_last_page()"><a href="#page_head">上一页</a></button>
+          <button type="button" class="btn btn-default" onclick="click_next_page()"><a href="#page_head">下一页</a></button>
+        </div>
+        <div class="btn-group" role="group" aria-label="...">
+          <button type="button" class="btn btn-default" onclick="click_jump_page()"><a href="#page_head">跳转至...</a></button>
+        </div>
+        <br><br><br><br>
+    </div>
+</div>
+</body>
+</html>

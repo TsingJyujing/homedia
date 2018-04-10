@@ -1,0 +1,191 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        简单图帖检索系统
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        let page_count = 30;
+        let page_id = 1;
+
+        function getUnselectedBlocks(){
+            var arr = [];
+            for (var key in novel_type_trans) {
+                if (!document.getElementById("chk" + key).checked){
+                    arr.push(key);
+                }
+            }
+            return arr;
+        }
+
+        function setPageSize(){
+            page_count = parseInt(prompt("输入页面大小",page_count));
+        }
+
+        function click_first_page() {
+            page_id = 1;
+            refresh_images_list();
+        }
+
+        function click_last_page() {
+            if (page_id == 1) {
+                alert("已经是第一页了！")
+            } else {
+                page_id--;
+                refresh_images_list();
+            }
+        }
+
+        function click_next_page() {
+            page_id++;
+            refresh_images_list();
+        }
+
+        function refresh_images_list() {
+            var keyword = $("#query_keyword").val();
+            $.get(
+                "/homedia/query/images/bytitle",
+                {
+                    key_words: keyword,
+                    p: page_id, n: page_count
+                },
+                function (data) {
+                    data = JSON.parse(data);
+                    if (data.length<=0){
+                        alert("没有任何结果T_T");
+                        return;
+                    }
+                    const mainBlock = $("#main_box");
+                    mainBlock.empty();
+                    //Clear block first
+
+                    data.forEach(function (images_info) {
+                        console.log("Appending:" + images_info);
+                        mainBlock.append(
+                            $("<div></div>").attr({
+                                "class": "col-md-12 column",
+                            }).append($("<h4></h4>").html(
+                                $("<a></a>").attr(
+                                    {
+                                        href: "/homedia/view/images?id=" + images_info._id + "&key_words=" + keyword,
+                                        target: "_blank"
+                                    }
+                                ).text(
+                                     images_info.like?"♥":" " + "[" + images_info.block   + "] " + images_info.title
+                                )
+                            ))
+                        );
+                        mainBlock.append($("<br>"))
+                    })
+                }
+            )
+        }
+         $(function () {
+            refresh_images_list();
+        })
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/homedia/view/query/novel">简单图片检索系统</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="/homedia/view/favor/novel">收藏文献</a>
+                        </li>
+                    </ul>
+                    <form class="navbar-form navbar-left" onkeypress="click_first_page()" onsubmit="return false">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="query_keyword" onkeypress="click_first_page()" title=""/>
+                        </div>
+                        <button type="button" class="btn btn-default" onclick="click_first_page()">搜索</button>
+
+
+                    </form>
+
+                    <ul class="nav navbar-nav navbar-left">
+                        <li class="dropdown open">
+                            <a class="dropdown-toggle" href="#" data-toggle="dropdown">检索设置<strong
+                                    class="caret"></strong></a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="#" onclick="setPageSize()">设置页面条数</a>
+                                </li>
+
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="javascript:alert('Copyright TsingJyujing');">Copyright-_-</a>
+                        </li>
+
+                    </ul>
+
+
+                </div>
+
+            </nav>
+        </div>
+        <div class="col-md-12 column">
+            <br><br><br>
+            <!--这里输出主要内容-->
+            <div class="row clearfix" id="main_box">
+
+            </div>
+
+            <div class="col-md-12 column">
+
+                <nav class="navbar navbar-inverse navbar-fixed-bottom" role="navigation">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggle" data-toggle="collapse"
+                                data-target="#bs-example-navbar-collapse-2">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="#">切换</a>
+                    </div>
+                    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+                        <ul class="nav navbar-nav">
+                            <li>
+                                <a href="#" onclick="click_first_page()"><<</a>
+                            </li>
+                            <li>
+                                <a href="#" onclick="click_last_page()"><</a>
+                            </li>
+                            <li>
+                                <a href="#" onclick="click_next_page()">></a>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <br><br><br><br>
+        </div>
+    </div>
+</div>
+</body>
+</html>

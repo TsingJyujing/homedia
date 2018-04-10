@@ -1,0 +1,253 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
+
+
+    <title>
+        XHAMSTER TOP VIDEOS
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <script src="/homedia/static/js/jquery.lazyload.min.js"></script>
+    <script src="/homedia/static/js/common_api.js"></script>
+    <script src="/homedia/static/js/bootstrap-notify.min.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        let page_id = 1;
+
+        function set_lazy_images() {
+            $("img.lazy").lazyload({
+                effect: "fadeIn",
+                threshold: 180
+            });
+        }
+
+        function click_last_page() {
+            if (page_id > 1) {
+                page_id--;
+                refresh_page();
+            }
+        }
+
+        function click_next_page() {
+            page_id++;
+            refresh_page();
+        }
+
+        function click_first_page() {
+            page_id = 1;
+            refresh_page();
+        }
+
+        function click_to_page() {
+            const jump_to = parseInt(prompt("输入需要跳转的页数"));
+            if (jump_to >= 1) {
+                page_id = jump_to;
+                refresh_page(page_id);
+            }
+        }
+
+        function refresh_page_by_query(keywords, page_index) {
+            $.getJSON(
+                "/homedia/get/xhamster/query", {
+                    "q": keywords,
+                    "p": page_index
+                }, refresh_page_by_data
+            )
+        }
+
+        function refresh_page_by_index(page_index) {
+            $.getJSON(
+                "/homedia/get/xhamster/top", {
+                    "p": page_index
+                }, refresh_page_by_data
+            )
+        }
+
+        function refresh_page() {
+            const key_word = $("#query_keyword").val();
+            if (key_word === "") {
+                console.log("refresh page by index.");
+                refresh_page_by_index(page_id);
+            } else {
+                console.log("refresh page by keyword:" + key_word);
+                refresh_page_by_query(key_word, page_id);
+            }
+        }
+
+        $(init_function);
+
+        function init_function() {
+            refresh_page();
+        }
+
+        function refresh_page_by_data(data) {
+            const main_box = $("#main_box");
+            main_box.empty();
+            main_box.append('<br><br><br><br>');
+            data.forEach((url) => {
+                // Create container
+                const image_row = $("<div></div>").attr("class", "row");
+                const text_row = $("<div></div>").attr("class", "row");
+                const block_container = $("<div></div>").attr("class", "col-md-12 thumbnail");
+                main_box.append($("<div></div>").attr("class", "row").append(block_container));
+                block_container.append(image_row).append(text_row);
+                $.getJSON(
+                    "/homedia/get/xhamster/info", {
+                        "url": url
+                    }, (data) => {
+                        const append_image_url = (image_url) => {
+                            image_row.append($("<div></div>").attr({
+                                "class": "col-md-12",
+                                "style": "height:240px"
+                            }).append(
+                                $("<img></img>").attr({
+                                    "class": "lazy",
+                                    "data-original": image_url,
+                                    "alt": "加载失败",
+                                    "style": "height:240px"
+                                })
+                            ));
+                            image_row.append("<br>");
+                        };
+                        append_image_url(data["preview_all"][5]);
+                        text_row.append(
+                            $("<div></div>").attr({
+                                "class": "col-md-12",
+                            }).append(
+                                $("<h3></h3>").append($("<a></a>").attr({
+                                    "href": "/homedia/view/xhamster/detail?id=" + url.match(new RegExp("[^/]*?$"))[0],
+                                    "target": "_blank"
+                                }).text(data["title"]))
+                            )
+                        );
+                        set_lazy_images();
+                    }
+                )
+            });
+
+            main_box.append("<br><br><br><br>");
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <div class="row clearfix">
+        <div class="col-md-12 column">
+            <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1">
+                        <span class="sr-only">Toggle navigation</span><span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/homedia/view/xhamster/top">XHAMSTER TOP VIDEOS</a>
+                </div>
+
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="/homedia/view/xhamster/top">收藏文献</a>
+                        </li>
+                    </ul>
+                    <form class="navbar-form navbar-left" onkeypress="click_first_page()" onsubmit="return false">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="query_keyword" onkeypress="click_first_page()"
+                                   title=""/>
+                        </div>
+                        <button type="button" class="btn btn-default" onclick="click_first_page()">搜索</button>
+
+
+                    </form>
+                    <ul class="nav navbar-nav navbar-left">
+                        <li class="dropdown">
+                            <a class="dropdown-toggle" href="#" data-toggle="dropdown">
+                                板块设置<strong class="caret"></strong>
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-left">
+                        <li class="dropdown open">
+                            <a class="dropdown-toggle" href="#" data-toggle="dropdown">检索设置<strong
+                                    class="caret"></strong></a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="#" onclick="setPageSize()">设置页面条数</a>
+                                </li>
+
+                            </ul>
+                        </li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a href="javascript:alert('Copyright TsingJyujing');">Copyright-_-</a>
+                        </li>
+
+                    </ul>
+
+
+                </div>
+
+            </nav>
+        </div>
+        <div class="col-md-12 column" id="main_box">
+            <br><br><br>
+            <!--这里输出主要内容-->
+            <div class="row">
+                <div class="col-md-12 column">
+                    <div class="row">
+                        <div class="col-md-2">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-2">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br><br><br><br>
+        </div>
+
+        <div class="col-md-12 column">
+
+            <nav class="navbar navbar-inverse navbar-fixed-bottom" role="navigation">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-2">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">切换</a>
+                </div>
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
+                    <ul class="nav navbar-nav">
+                        <li>
+                            <a href="#" onclick="click_first_page()"><<</a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="click_last_page()"><</a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="click_next_page()">></a>
+                        </li>
+                        <li>
+                            <a href="#" onclick="click_to_page()">--></a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </div>
+</div>
+</body>
+</html>

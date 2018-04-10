@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>
+        图片查看工具
+    </title>
+    <!-- Bootstrap core CSS -->
+    <link href="/homedia/static/css/bootstrap.min.css" rel="stylesheet">
+    <style type="text/css">
+        ul {
+            overflow: hidden;
+            width: 100%;
+        }
+
+        ul li {
+            width: 100%;
+            float: left;
+        }
+    </style>
+    <script src="/homedia/static/js/jquery.js"></script>
+    <script src="/homedia/static/js/bootstrap.min.js"></script>
+    <script src="/homedia/static/js/jquery.lazyload.min.js"></script>
+    <script src="/homedia/static/js/common_api.js"></script>
+    <script src="/homedia/static/js/bootstrap-notify.min.js"></script>
+    <!--Code blocks-->
+    <script language="javascript">
+        const current_id = "{{ xhamster_context }}";
+        const video_url_prefix = "https://m.xhamster.com/videos/";
+        $(function () {
+            init_page(current_id);
+        });
+
+        function set_lazy_images() {
+            $("img.lazy").lazyload({
+                effect: "fadeIn",
+                threshold: 180
+            });
+        }
+
+        function set_rate(rate) {
+            $.post(
+                "/homedia/set/xhamster/rate", {
+                    "url": current_id,
+                    "rate": rate
+                }, (data) => {
+                    init_page(current_id);
+                    try {
+                        const jdata = JSON.parse(data);
+                        if ("status" in jdata) {
+                            if (jdata["status"] === "error") {
+                                throw jdata["error_info"];
+                            }
+                        }
+
+                        notify_success("设置评分成功");
+                    } catch (err) {
+                        notify_fail("设置评分失败：" + err.message)
+                    }
+                }
+            )
+        }
+
+        function append_to_download() {
+            $.post(
+                "/homedia/append/task",
+                {
+                    task_type: "download_xhamster",
+                    param: video_url_prefix + current_id
+                }, (text) => {
+                    try {
+                        const data = JSON.parse(text);
+                        if (data["status"] === "error") {
+                            throw data["error_info"];
+                        }
+                        notify_success("添加任务成功");
+                    } catch (err) {
+                        notify_fail("添加任务失败" + err.message)
+                    }
+
+                }
+            );
+
+        }
+
+        function init_page(url_key) {
+            const url = video_url_prefix + url_key;
+            $("#main_link").attr("href", url);
+            $.getJSON(
+                "/homedia/get/xhamster/info",
+                {
+                    "url": url_key
+                },
+                (data) => {
+                    $("#video_title").text(data["title"]);
+                    const labels_container = $("#labels_container");
+                    labels_container.empty();
+                    data["label"].forEach((text) => {
+                        labels_container.append(
+                            $("<span></span>").attr({
+                                "class": "label label-default",
+                                "style": "display: inline-block;"
+                            }).text(
+                                text
+                            )
+                        );
+                        labels_container.append("&nbsp;")
+                    });
+                    const intro_container = $("#intro_container");
+                    data["preview_all"].forEach((image_url) => {
+                        intro_container.append(
+                            $("<div></div>").attr({
+                                "class": "col-md-4"
+                            }).append(
+                                $("<img></img>").attr({
+                                    "class": "lazy",
+                                    "data-original": image_url,
+                                    "width": "100%",
+                                    "alt": "加载失败"
+                                })
+                            )
+                        );
+                        intro_container.append("&nbsp;")
+                    });
+                    $("#item_rate").text(
+                        "评分：" + data["rate"] + "分"
+                    );
+
+                    $("#item_duration").text(
+                        "时长：" + format_video_time(data["duration"])
+                    );
+                    set_lazy_images();
+
+                    const myrate = "myrate" in data ? data["myrate"] : 0;
+                    const star_group = $("#star_group");
+                    star_group.empty();
+                    for (let i = 1; i <= 5; i++) {
+                        star_group.append(
+                            $("<button></button>").attr({
+                                "type": "button",
+                                "class": "btn btn-default",
+                                "id": "rate_" + i,
+                                "onclick": "set_rate(" + i + ")"
+                            }).html($("<span></span>").attr({
+                                "class": i > myrate ? "glyphicon glyphicon-star-empty" : "glyphicon glyphicon-star"
+                            }))
+                        )
+                    }
+                }
+            )
+        }
+    </script>
+</head>
+<body>
+<div class="container">
+    <div class="row" id="intro_container">
+        <div class="col-md-4">
+            <a href="" id="main_link">
+                <h3 id="video_title">Info page title</h3>
+            </a>
+            <br>
+            <ul class="list-group">
+                <li class="list-group-item" id="item_duration">时长：</li>
+                <li class="list-group-item" id="item_rate">评分：</li>
+                <li class="list-group-item" id="labels_container">
+                </li>
+                <li class="list-group-item" id="item_rate">
+                    <div class="btn-group" role="group" aria-label="..." id="star_group">
+
+                    </div>
+                </li>
+                <li class="list-group-item" id="labels_container">
+                    <button type="button" class="btn btn-primary" id="append_to_download"
+                            onclick="append_to_download()">
+                        <span class="glyphicon glyphicon-download"> 添加到下载</span>
+                    </button>
+                </li>
+            </ul>
+
+        </div>
+
+    </div>
+</div>
+</body>
+</html>
